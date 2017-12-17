@@ -1,0 +1,460 @@
+\documentclass{article}
+
+\usepackage{minted}
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+\newcommand{\inline}[1]{\mintinline{idris}{#1}}
+
+\begin{document}
+
+\section{Introduction}
+Hello/welcome and such.
+
+This book assumes you have basic mathematical fluency in something like a discrete math course.
+You'll probably be fine either way, as long as you've encountered some basics like functions and the concept of natural numbers before.
+Previous programming experience probably won't help you, unless it's in Haskell or another functional language (if you don't know what that means, you're still good, just read on and pay very close attention).
+
+I encourage you to type everything in for yourself to see how it works.
+
+\section{Introduction to Idris}
+
+Idris is a programming language.
+
+\subsection{Basic Idris}
+\begin{minted}{idris}
+p : a -> b
+\end{minted}
+
+This is a function p that takes a value of type \inline{a} and returns a value of type \inline{b}.
+You can think of this as a normal mathematical function for now, that is, a function $p : A \rightarrow B$, from a set $A$ to a set $B$.
+If we think about this as a proposition, it says that, given \inline{a}, I can prove \inline{b}.
+
+If we were going to write this function in Idris, we would write:
+
+\begin{minted}{idris}
+p : a -> b
+p a = ?something
+\end{minted}
+
+where \inline{a} in line 2 is the value of type \inline{a} that we passed to the function. For a more concrete example:
+
+\begin{minted}{idris}
+p : Integer -> Integer
+p x = x + 2
+\end{minted}
+
+This is a function from the integers to the integers, that takes any integer, called $x$, and returns another integer, namely, $x + 2$.
+In math, we would write this as:
+\[
+    p : \mathbb{Z} \rightarrow \mathbb{Z}
+\]
+
+\[
+    p(x) = x + 2
+\]
+
+\subsection{Working with Lists}
+
+\subsection{Recursion}
+
+\subsection{Pattern Matching}
+
+\subsection{Defining Custom Types}
+
+\subsection{Proving Things in a Programming Language?}
+\subsubsection{Basic Propositions}
+
+Recall that, if I have a function:
+
+\begin{minted}{idris}
+p : a -> b
+\end{minted}
+
+We can think about this as a proposition, that says, given \inline{a}, I can prove \inline{b}.
+We can extend this to a couple other common logical operators, such as $\wedge$, also called ``and'', and $\vee$, also called ``or''.
+How might we represent $\wedge$?
+
+With a pair, (a, b). Remember, the idea here is that, if I have a value with this type, then I have proven that it is true. So if I have (a, b), then I must have both an a and a b, or, equivalently, proofs of both. Another way to express this is by using an implication:
+
+\begin{minted}{idris}
+a -> b -> c
+\end{minted}
+
+This says that if I have a proof of \inline{a}, if I have a proof \inline{b}, then I can create a proof of \inline{c}.
+Simple manipulation of the logical operators will show this is the same as knowing both \inline{a} and \inline{b}. % TODO Maybe actually include this.
+Let’s use this briefly to show how it works just like the normal ``and'' operator.
+
+Imagine we are trying to prove that, given $A$ and $B$, I can prove $A$.
+Obviously this is true, since we've assumed $A$.
+
+This is what the type would be in Idris:
+\begin{minted}{idris}
+a -> b -> a
+\end{minted}
+
+How do we write a function with this type?
+
+\begin{minted}{idris}
+f : a -> b -> a
+f a b = a
+\end{minted}
+
+The first argument is an \inline{a}, and we need to prove \inline{a} (remember, this is equivalent to producing a value of the type \inline{a}).
+So, let's just immediately return the first argument.
+
+Finally, let’s show how to represent ``or'' in Idris.
+We can do this via the following:
+
+\begin{minted}{idris}
+data Either a b = Left a | Right b
+\end{minted}
+
+This will take a bit more explanation, but it's not super complicated.
+Basically, we have a type called \inline{Either}, and we have two ways to create values of this type.
+Just like you can create a value of the type \inline{Bool} by writing either \inline{True} or \inline{False}, you can create a value of the type \inline{Either} with either a value of the \inline{Left} type, \inline{a}, or the \inline{Right} type, \inline{b}.
+Note that we do not need both, as that is the key.
+So if we can create a value of the type \inline{Either a b} with just an \inline{a} or just a \inline{b}, this successfully represents the standard ``or'' operator.
+
+\paragraph{Exercises}
+
+\subsubsection{Predicates with Numbers}
+Now, we’ll extend this idea past just simple boolean propositions, and include numbers and more complicated predicates.
+Basically, now we will take things like numbers, rather than just values of any type, and show that certain conditions are true.
+
+For example:
+
+\begin{minted}{idris}
+(a, b) : Nat -> LTE a b -> LTE 0 (b - a)
+\end{minted}
+
+This is a more complicated proposition, but it is hopefully not incomprehensible.
+This says, “given two natural numbers $a$ and $b$, and a proof that $a \leq b$, I can show that $b - a$ is at least $0$.”
+Equivalently:
+
+\[
+    \forall a, b \in \mathbb{N}, a \leq b, b - a \geq 0
+\]
+
+There is one more important feature that our functions must have to be true proofs: totality.
+This means that the function is defined for every possible input.
+For mathematical functions, this is generally included as part of the definition of a function, but often programmers will write functions that are not total.
+This is no good, because if you don't include that case, then you've only proved the proposition for the cases you did define.
+To make sure that all our functions are total, we can write total before their definition, and Idris will let us know if we missed any cases.
+
+\begin{minted}{idris}
+-- This will be fine
+total
+f : Integer -> Integer
+f x = x + 2
+
+-- This will be an error (note that we are missing the case for an empty list)
+total
+g : List a -> a
+g (x :: xs) = x
+\end{minted}
+
+If you want to read more about this sort of thing, see the Curry--Howard correspondence (and related topics).
+
+\section{Definition of Natural Numbers}
+\subsection{Definition}
+Now, starting on the actual proof.
+So, first, let's state the axioms we'll be using, which are just the basic Peano axioms, first using ``normal'' math, then in Idris.
+First, the definition of the natural numbers, which is two of the normal Peano axioms:
+A natural number is either 0, or the successor (i.e., one more than) of another natural number.
+
+Examples:
+\begin{itemize}
+    \item 0
+    \item 1 (which is one more than 0)
+    \item 2 (which is one more than 1)
+    \item 5 (which is one more than 4, which is one more than 3, which is one more than 2)
+\end{itemize}
+
+Now, in Idris, we define the natural numbers as:
+\begin{minted}{idris}
+data Nat : Type where
+    Z : Nat
+    S : Nat -> Nat
+\end{minted}
+
+This is the same thing, saying that a value of the type \inline{Nat} is either \inline{Z} (i.e. 0) or \inline{S n} where \inline{n} is another natural number.
+
+So, now we need to say what it means for two natural numbers to be equal.
+We're going to go with the most basic definition of equality, and just say that two values are equal if they're the same.
+This might seem circular, but that's because ``same'' here means that the numbers are constructed the same way, i.e., that they use the constructors \inline{S} and \inline{Z} the same number of times and in the same way (e.g. \inline{S (S (S Z))} is the same as \inline{S (S (S Z))}, because both are constructed from three consecutive calls to \inline{S} on \inline{Z}).
+
+In Idris:
+\begin{minted}{idris}
+data (=) : (x : A) -> (y : A) -> Type where
+    Refl : x = x
+\end{minted}
+
+This might seem complicated, but it's really quite simple.
+Our type is the proposition that \inline{x = y}, and the only way to construct this is with a constructor that only takes one parameter!
+Obviously if we give it one parameter, \inline{x}, we can say that \inline{x = x}, simply by definition.
+And this is the reflexive property, which is another of the Peano axioms.
+
+Now, we must define addition, because it's such a basic notion there's basically nothing interesting we can say without it.
+Addition is defined as follows:
+
+\begin{itemize}
+    \item[] $0 + m = m$
+    \item[] $S(n) + m = S(n + m)$
+\end{itemize}
+
+Notice this definition is recursive.
+In Idris, the definition is very similar (note that \inline{plus} is equivalent to \inline{+}):
+
+\begin{minted}{idris}
+total
+plus : (n, m) : Nat -> Nat
+plus Z m = m
+plus (S n) m = S (plus n m)
+\end{minted}
+
+\subsection{Examples}
+
+\subsection{Properties}
+
+\subsection{Exercises}
+
+\section{Basic Proofs}
+\subsection{Additive Identity}
+
+\subsection{Commutivity}
+Let's being by stating our proposition, that addition commutes, in Idris:
+
+\begin{minted}{idris}
+additionCommutes : (a, b : Nat) -> a + b = b + a
+\end{minted}
+
+This says that, if I have two natural numbers, $a$ and $b$, then I know that $a + b = b + a$.
+Now, let’s try and write a function like this.
+
+\begin{minted}{idris}
+additionCommutes a b = ?something
+\end{minted}
+
+The easiest way to do this is, as usual, to break the problem up into smaller parts, specifically, into cases. So let’s do that now:
+
+\begin{minted}{idris}
+additionCommutes Z Z = ?something
+additionCommutes Z (S k) = ?something2
+additionCommutes (S k) Z = ?something3
+additionCommutes (S k) (S j) = ?something4
+\end{minted}
+
+Here are our four cases.
+The first case is when both \inline{a} and \inline{b} are zero.
+That case is quite simple, because our definition of addition will immediately evaluate both to be zero, so we can simply use the reflexive property here.
+So that case becomes:
+
+\begin{minted}{idris}
+additionCommutes Z Z = Refl
+\end{minted}
+
+Now let’s look at the next two cases. In the first of these, we want to show the following:
+\begin{minted}{idris}
+Z + (S k) = (S k) + Z
+\end{minted}
+
+However, by our definition of addition, the left hand side really simplifies to just \inline{S k}, so we now need to show:
+
+\begin{minted}{idris}
+S k = S k + Z
+\end{minted}
+
+Let’s now write a new lemma, which will be a new function in Idris.
+This function has the type:
+
+\begin{minted}{idris}
+addZeroRHS : (k : Nat) -> k = plus k 0
+\end{minted}
+
+This says that, if I have a natural number $k$, then adding $0$ to it (on the right hand side), doesn’t change the value.
+How can we prove this?
+Once again, let’s split into cases.
+If \inline{k = 0}, this is trivially true by the definition of addition, so we can write:
+
+\begin{minted}{idris}
+addZeroRHS Z = Refl
+\end{minted}
+
+Otherwise, if \inline{k = S j} is the successor of another natural number, \inline{j}, (this is the only other possible case), then we can show this is true via induction (another one of the Peano axioms).
+So, if we can show that this proposition is true for \inline{j}, then we’re basically done.
+How can we do that?
+Well, we can just use the proposition again, but we apply \inline{j} to it, and we will eventually reach zero, a value for which we know the proposition is true (as we proved it earlier).
+Now we have a proof that \inline{j = plus j 0}, and that \inline{k = S j}.
+So now, we simply need to show that \inline{j = plus j 0 -> S j = S (plus j 0)}.
+
+This is trivially true by definition, as one of the Peano axioms says that $m=n$ if and only if $S(m)=S(n)$.
+In Idris, we express this via the function \inline{eqSucc}, which specifically says:
+
+\begin{minted}{idris}
+eqSucc : (left, right: Nat) -> left = right -> S left = S right
+\end{minted}
+
+That is, if two things are equal, then the successors of the two values is also equal.
+Therefore, we can finish our function \inline{addZeroRHS} with this:
+
+\begin{minted}{idris}
+addZeroRHS (S j) = eqSucc j (plus j 0) (addZeroRHS j)
+\end{minted}
+
+So that takes care of the case of:
+
+\begin{minted}{idris}
+additionCommutes Z (S k) = addZeroRHS (S k)
+\end{minted}
+
+The next case, \inline{additionCommutes (S k) Z} is almost identical, except here we’re trying to show that \inline{S k + Z = Z + S k}.
+Here, the right hand side, rather than the left, immediately simplifies.
+So this is exactly the same as what we just proved, just flipped (i.e., it is \inline{S k + Z = S k}).
+Luckily for us, equality is symmetric, also by the Peano axioms, so we can simply apply this property, via a function called \inline{sym}.
+The type of it is \inline{sym : (left = right) -> right = left}.
+So we can complete the next case with:
+
+\begin{minted}{idris}
+additionCommutes (S k) Z = sym (addZeroRHS (S k))
+\end{minted}
+
+Now there is only one case left, which is:
+
+\begin{minted}{idris}
+additionCommutes (S k) (S j) = ?something
+\end{minted}
+
+Once again, we will use the definition recursively, so that we will eventually reach one of the other cases that we have already proven the claim for.
+We want to incorporate a recursive call to our function, specifically, \inline{additionCommutes k j}, into our proof.
+So with that call, we have a proof of \inline{k + j = j + k}, but we want to prove \inline{S (k + S j) = S (j + S )}, which is unfortunately not just a simple application of \inline{eqSucc}.
+So how can we do this?
+
+The first step is to realize that, if we know that \inline{k + S j = j + S k}, we can easily use \inline{eqSucc} to prove the final result.
+So let’s focus on proving that smaller claim.
+By our definition of addition, we know that \inline{k + S j = S (k + j)}.
+We can formalize this in Idris as follows:
+
+\begin{minted}{idris}
+addSIsS : (k, j : Nat) -> k + S j = S (k + j)
+addSIsS Z j = Refl
+addSISS (S k) j = eqSucc (k + S j) (S (k + j)) (addSIsS k j)
+\end{minted}
+
+As usual we can trivially show this is true when \inline{k = Z}, simply by the definition of addition.
+Then, we use a recursive call to prove that the statement is true for the predecessor (the opposite of the successor), that is, \inline{k + S j = S (k + j)}.
+Finally we use our familiar \inline{eqSucc} to obtain our desired final result.
+
+Now that we have this, let’s take a step back, and look at what we can show:
+
+We can show that, given \inline{S k} and \inline{S j}, that \inline{k + j = j + k}, via a recursive call to \inline{additionCommutes}, and therefore that \inline{S (k + j) = S (j + k)}.
+We can show that \inline{k + S j = S (k + j)} via \inline{addSIsS}, and therefore also \inline{j + S k = S (j + k)}.
+And let’s remind ourselves of our current goal for our lemma:
+
+\begin{minted}{idris}
+(k, j : Nat) -> k + S j = j + S k
+\end{minted}
+
+So, if you look closely, you will see we can do this easily as follows (note that each equality is something we can prove, as noted above):
+
+\begin{minted}{idris}
+k + S j = S (k + j) -- Via addSIsS k j
+S (k + j) = S (j + k) -- Via eqSucc and additionCommutes
+S (j + k) = j + S k -- Via addSIsS j k
+\end{minted}
+
+The last of these we obtain by using the symmetric property on \inline{addSIsS}.
+So how do we link these together?
+By using the transitive property, which is one of the Peano axioms, written in Idris as:
+
+\begin{minted}{idris}
+trans : a = b -> b = c -> a = c
+\end{minted}
+
+By applying this twice, we can get our desired result (although unfortunately it looks a little messy):
+
+\begin{minted}{idris}
+lemma : (k, j : Nat) -> k + S j = j + S k
+lemma k j = trans (trans (addSIsS k j)
+                         (eqSucc (k + j) (j + k) (additionCommutes k j)))
+                  (sym (addSIsS j k))
+\end{minted}
+
+Now, we can show the following easily, via a single call to \inline{eqSucc}.
+
+\begin{minted}{idris}
+(k, j : Nat) -> S (k + S j) = S (j + S k)
+\end{minted}
+
+Now, looking back at our original function, \inline{additionCommutes}, we can see that that’s exactly what we needed to prove, so let’s just shove this in there, and we’re done!
+
+Final code (the mutual block is required to have mutual recursion, i.e., \inline{lemma}, which calls \inline{additionCommutes}, and \inline{additionCommutes}, which calls \inline{lemma}):
+
+\begin{minted}{idris}
+addZeroRHS : (k : Nat) -> k = plus k 0
+addZeroRHS Z = Refl
+addZeroRHS (S j) = let recursive = addZeroRHS j in
+                             eqSucc j (plus j 0) recursive
+
+addSIsS: (a, b : Nat) -> a + S b = S (a + b)
+addSIsS Z b = Refl
+addSIsS (S k) b = eqSucc (k + S b) (S (k + b)) (addSIsS k b)
+
+mutual
+    lemma : (k, j : Nat) -> k + S j = j + S k
+    lemma k j = trans (trans (addSIsS k j)
+                             (eqSucc (k + j) (j + k) (additionCommutes k j)))
+                      (sym (addSIsS j k))
+
+    additionCommutesLemma : (k, j : Nat) -> S (plus k (S j)) = S (plus j (S k))
+    additionCommutesLemma k j = eqSucc (k + S j) (j + S k) (lemma k j)
+
+    additionCommutes : (a, b : Nat) -> a + b = b + a
+    additionCommutes Z Z = Refl
+    additionCommutes Z (S k) = addZeroRHS (S k)
+    additionCommutes (S k) Z = sym \$ addZeroRHS (S k)
+    additionCommutes (S k) (S j) = additionCommutesLemma k j
+\end{minted}
+
+\subsection{Associativity}
+
+\section{Divides, GCD, LCM}
+\subsection{Divides}
+\subsubsection{In Idris}
+
+\subsection{GCD}
+\subsubsection{In Idris}
+
+\subsection{LCM}
+\subsubsection{In Idris}
+
+\section{Prime Numbers}
+\subsection{Definition}
+\subsubsection{In Idris}
+
+\subsection{There Are Infinitely Many Primes}
+
+\subsection{Fundamental Theorem of Arithmetic}
+
+\section{Ring of Integers Modulo $n$}
+\subsection{Definition of Ring}
+\subsubsection{In Idris}
+
+\subsection{Definition of Congruence Modulo $n$}
+
+\subsection{Euler's $\varphi$-function}
+
+\subsection{Euler's Theorem}
+
+\subsection{Chinese Remainder Theorem}
+
+\section{}
+
+\section{Appendix}
+
+\subsection{Why is any of this valid?}
+
+\subsection{Links}
+
+\end{document}
+
