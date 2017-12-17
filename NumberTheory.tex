@@ -19,25 +19,55 @@ I encourage you to type everything in for yourself to see how it works.
 
 \section{Introduction to Idris}
 
-Idris is a programming language.
+Idris is a purely functional programming language.
+
+Purely functional means two things: that all functions are pure, and that programs in Idris are based around the composition of functions (functional programming doesn't really have a widely accepted definition).
+Pure functions are functions that return the same output given the same input.
+For example, using $f(x) = x + 5$, $f(3)$ is always 8, and it will never sometimes end up being 16 or 4, or any other number.
+Another important facet of Idris is that functions act just like normal values.
+For example, I can define a function $g(f, x) = f(x)$.
+This function takes two arguments, a function $f$ and a value $x$, and returns $f(x)$.
+For example, with $f(x) = x + 5$, $g(f, 8) = f(8) = 13$.
+However, if I use the sine function, I get: $g(sin, \pi) = sin(\pi) = 0$.
+
+We will be using Idris to write proofs, and it will check our proofs for us, so we can be sure that we did it right.
+However, in addition to being able to check proofs, Idris is also a general purpose programming language, so you could reasonably program just about anything in it.
 
 \subsection{Basic Idris}
+\paragraph{Defining Functions}
+As Idris is a functional language, defining functions is the most important part of Idris.
+On a very basic level, you can think of functions in Idris as being just like mathematical functions: mappings from one set to another.
+
+For example, if I want to write a function $p$ from a set $A$ to another set $B$, I would write:
+
+$$p : A \rightarrow B$$
+
+In Idris, if I want to write a function \inline{p} from a type \inline{a} to another type \inline{b}, I would type:
+
 \begin{minted}{idris}
 p : a -> b
 \end{minted}
 
-This is a function p that takes a value of type \inline{a} and returns a value of type \inline{b}.
-You can think of this as a normal mathematical function for now, that is, a function $p : A \rightarrow B$, from a set $A$ to a set $B$.
-If we think about this as a proposition, it says that, given \inline{a}, I can prove \inline{b}.
-
-If we were going to write this function in Idris, we would write:
+If we were going to actually define this function in Idris, we would start by writing:
 
 \begin{minted}{idris}
 p : a -> b
 p a = ?something
 \end{minted}
 
-where \inline{a} in line 2 is the value of type \inline{a} that we passed to the function. For a more concrete example:
+where \inline{a} in line 2 is the value of type \inline{a} that we passed to the function.
+Here \inline{?something} is called a ``hole.''
+Basically, it's a placeholder for some definition that we will eventually provide.
+Idris basically just ignores holes altogether, but it will tell you the type of the hole if you ask.
+To do this, simply type at the Idris REPL:
+
+\begin{minted}{idris}
+> something
+\end{minted}
+
+And Idris will respond with the type of the value that needs to go in place of \inline{?something} to complete the definition.
+
+For a more concrete example:
 
 \begin{minted}{idris}
 p : Integer -> Integer
