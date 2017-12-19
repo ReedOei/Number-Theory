@@ -663,7 +663,6 @@ The answers can be found in the appendix.
 \section{Appendix}
 
 \subsection{Answers}
-\subsubsection{Answers}
 
 \begin{enumerate}
     \item If $a + b = c$, then $b + a = c$.
@@ -692,6 +691,26 @@ additionEqRight a b c prf =
 \end{minted}
 
     \item Express \inline{addSIsS} using \inline{additionAssociates}.
+
+% TODO Not the nicest...improve?
+
+\begin{minted}{idris}
+addSIsS : (a, b : Nat) -> a + S b = S (a + b)
+addSIsS a b =
+        -- Prove a + (1 + b) = a + (b + 1)
+    let addOne = additionEqLeft (1 + b) (b + 1) a (additionCommutes 1 b)
+        -- Prove a + (b + 1) = (a + b) + 1
+        associate = additionAssociates a b 1
+        -- Transform (a + b) + 1 to 1 + (a + b)
+        commute = additionCommutes (a + b) 1
+        -- Transform 1 + (a + b) = (1 + a) + b
+        associateCommute = additionAssociates 1 a b in
+        -- a + (1 + b) = a + (b + 1) = (a + b) + 1 = 1 + (a + b) = (1 + a) + b
+        -- Then a + (1 + b) = a + S b by def.
+        -- Also, (1 + a) + b = S a + b = S (a + b) by def.
+        trans (trans (trans addOne associate) commute) associateCommute
+\end{minted}
+
 \end{enumerate}
 
 \subsection{Why is any of this valid?}

@@ -38,16 +38,16 @@ mutual
   additionAssociates (S a) b c = let recursive = additionAssociates a b c in
                                      eqSucc (a + (b + c)) ((a + b) + c) recursive
 
-  addSIsS: (a : Nat) -> (b : Nat) -> a + S b = S (a + b)
-  addSIsS Z b = Refl
-  addSIsS (S k) b = eqSucc (k + S b) (S (k + b)) (addSIsS k b)
+  -- addSIsS: (a : Nat) -> (b : Nat) -> a + S b = S (a + b)
+  -- addSIsS Z b = Refl
+  -- addSIsS (S k) b = eqSucc (k + S b) (S (k + b)) (addSIsS k b)
 
-  -- addSIsS : (a, b : Nat) -> a + S b = S (a + b)
-  -- addSIsS a b = let associate = additionAssociates a b 1 -- Prove a + (b + 1) = (a + b) + 1
-  --                   commute = additionCommutes (a + b) 1 -- Transform (a + b) + 1 to 1 + (a + b)
-  --                   associateCommute = additionAssociates 1 a b -- Transform 1 + (a + b) = (1 + a) + b
-  --                   finalAssociate = additionEqRight (1 + a) (a + 1) b (additionCommutes 1 a) in -- Transform (1 + a) + b to (a + 1) + b
-  --                   trans associate (trans commute associateCommute) -- Link everything together
+  addSIsS : (a, b : Nat) -> a + S b = S (a + b)
+  addSIsS a b = let addOne = additionEqLeft (1 + b) (b + 1) a (additionCommutes 1 b) -- Prove a + (1 + b) = a + (b + 1)
+                    associate = additionAssociates a b 1 -- Prove a + (b + 1) = (a + b) + 1
+                    commute = additionCommutes (a + b) 1 -- Transform (a + b) + 1 to 1 + (a + b)
+                    associateCommute = additionAssociates 1 a b in -- Transform 1 + (a + b) = (1 + a) + b
+                    trans (trans (trans addOne associate) commute) associateCommute -- Link everything together
 
   additionCancelsLeft : (a, b, c : Nat) -> a + b = a + c -> b = c
   additionCancelsLeft Z b c prf = prf
