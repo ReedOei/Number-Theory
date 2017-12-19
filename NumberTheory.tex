@@ -136,6 +136,13 @@ The most important of these are:
 \end{itemize}
 
 \subsubsection{Tuples}
+Often, having multiple values is easy.
+One of the ways to pass multiple values to, or return multiple values from, a function in Idris is via \textit{tuples}.
+An example of a tuple is a pair, $(x, y)$, but they can be any size, (e.g., $(x, y, z, w, a, b, c)$).
+We write the type of a tuple in Idris very simply, for example, a pair of two integers is: \inline{(1, 2) : (Integer, Integer)}.
+
+Tuples cannot change size, which makes them good for representing data that we know always comes in pairs (e.g., coordinates), but not for representing data that can grow or shrink in length.
+For that, we turn to lists.
 
 \subsubsection{Lists}
 
@@ -269,23 +276,55 @@ data Nat : Type where
 This is the same thing, saying that a value of the type \inline{Nat} is either \inline{Z} (i.e. 0) or \inline{S n} where \inline{n} is another natural number.
 
 \subsection{Peano Axioms}
+We will be relying on the Peano axioms to prove all of our propositions in this book.
+Two of the Peano axioms establish the above definition of the natural numbers.
+They are expressed below in both ``normal'' math and Idris.
 
-So, now we need to say what it means for two natural numbers to be equal.
-We're going to go with the most basic definition of equality, and just say that two values are equal if they're the same.
-This might seem circular, but that's because ``same'' here means that the numbers are constructed the same way, i.e., that they use the constructors \inline{S} and \inline{Z} the same number of times and in the same way (e.g. \inline{S (S (S Z))} is the same as \inline{S (S (S Z))}, because both are constructed from three consecutive calls to \inline{S} on \inline{Z}).
+\begin{enumerate}
+    \item For any natural number $x$, $x = x$.
+        This is hopefully obviously true, and needs no explanation.
+        In Idris, however, the definition of equality can seem a little confusing.
+        Here it is:
 
-In Idris:
-\begin{minted}{idris}
-data (=) : (x : A) -> (y : A) -> Type where
-    Refl : x = x
-\end{minted}
+        \begin{minted}{idris}
+        data (=) : (x : A) -> (y : A) -> Type where
+            Refl : x = x
+        \end{minted}
 
-This might seem complicated, but it's really quite simple.
-Our type is the proposition that \inline{x = y}, and the only way to construct this is with a constructor that only takes one parameter!
-Obviously if we give it one parameter, \inline{x}, we can say that \inline{x = x}, simply by definition.
-And this is the reflexive property, which is another of the Peano axioms.
+        The strange part is the \inline{Refl} takes no arguments.
+        That is not quite true, as it takes \textit{implicit} arguments, as described before.
+        The this definition gives us the same thing as the Peano axioms however, as it only takes one argument, and therefore is definitionally true.
+        What it means in practice for two things to be equal in Idris is that they are constructed in the same way, i.e., that they use the constructors \inline{S} and \inline{Z} the same number of times and in the same way (e.g. \inline{S (S (S Z))} is the same as \inline{S (S (S Z))}, because both are constructed from three consecutive calls to \inline{S} on \inline{Z}).
 
-Now, we must define addition, because it's such a basic notion there's basically nothing interesting we can say without it.
+    \item If $x = y$, then $y = x$.
+        Again, no surprises here.
+        In Idris we write this using the function \inline{sym : (x = y) -> y = x}.
+        Here we see again the constructive nature of proving things in Idris, \inline{sym} takes a \textit{proof} that $x = y$ and then we get a proof that $y = x$.
+
+    \item If $x = y$, and $y = z$, then $x = z$.
+        Again, there is a simple function in Idris that expresses this fact: \inline{trans : (x = y) -> (y = z) -> x = z}.
+
+    \item $m = n$ if and only if $S(m) = S(n)$.
+        Here we express each direction of the implication in two ways in Idris.
+        Firstly, if $m = n$, then $S(m) = S(n)$, is written with \inline{eqSucc : (a : Nat) -> (b : Nat) -> (a = b) -> S a = S b}.
+        Here we see the first use of the dependent types so far.
+        \inline{eqSucc} takes two natural numbers, $a$ and $b$, and a proof that they are equal, and then gives us a proof back that their successors are equal.
+        We need the dependent types because we need to refer to the values of $a$ and $b$ later in the type to make sure we get a proof of the right thing.
+
+        Now, the other direction, if $S(n) = S(m)$, then $n = m$.
+        This is written using the similar function \inline{succInjective : (a : Nat) -> (b : Nat) -> (S a = S b) -> a = b}
+        We can see this is the same function, except with the last two parts (\inline{S a = S b} and \inline{a = b}) flipped.
+        Notice this is true for all injective functions, which is why the name is \inline{succInjective}.
+
+    \item For every natural number $n$, $S(n) \neq 0$.
+        This proof will be a little stranger, as it is a negative proof.
+        However, as discussed before, the key to writing a proof of a negative is proving that, if the proposition were true, then we would get \inline{Void}, from which we can prove anything.
+        To do this in Idris, we use the following function: \inline{SIsNotZ : (S n = Z) -> Void}.
+        Again, \inline{n} here is an implicit parameter.
+\end{enumerate}
+
+\subsection{Addition and Multiplication}
+Now, we must define addition and multiplication, because it's such a basic notion that there is basically nothing interesting we can say without it.
 Addition is defined as follows:
 
 \begin{itemize}
@@ -303,14 +342,89 @@ plus Z m = m
 plus (S n) m = S (plus n m)
 \end{minted}
 
-\subsection{Examples}
+Here is the definition of multiplication, which is quite similar to the definition of addition, and is simply repeated addition:
 
-\subsection{Properties}
+\begin{itemize}
+    \item[] 0 * n = 0
+    \item[] S(n) * m = m + (n * m)
+\end{itemize}
+
+And in Idris (once again noting that \inline{mult} is equivalent to \inline{*}):
+
+\begin{minted}{idris}
+total
+mult : (n, m : Nat) -> Nat
+mult Z m = Z
+mult (S n) m = plus m (mult n m)
+\end{minted}
+
+\subsection{Examples}
 
 \subsection{Exercises}
 
 \section{Basic Proofs}
 \subsection{Additive Identity}
+One of the most basic things we can prove is that addition zero does not affect a number, specifically, the following propositions:
+
+\begin{minted}{idris}
+zIsIdLeft : (n : Nat) -> n = plus 0 n
+zIsIdRight : (n : Nat) -> n = plus n 0
+\end{minted}
+
+Notice that we have to prove it twice, because they are technically different propositions.
+Let's tackle the first one first (naturally), because that's the easier one.
+First, let's take a look at our definition of addition, specifically, the first case:
+
+\begin{minted}{idris}
+plus Z m = m
+\end{minted}
+
+This means that whenever we have \inline{plus Z m}, we know we can simplify it to \inline{m} by definition.
+Notice how this is exactly what we wrote in our type, except the equality is flipped.
+If it weren't, we could simply write:
+
+\begin{minted}{idris}
+zIsIdLeft : (n : Nat) -> n = plus 0 n
+zIsIdLeft n = Refl
+\end{minted}
+
+Luckily we have a function that flips the equality, called \inline{sym}, so we can write this instead:
+
+\begin{minted}{idris}
+zIsIdLeft : (n : Nat) -> n = plus 0 n
+zIsIdLeft n = sym Refl
+\end{minted}
+
+The next proposition, \inline{zIsIdRight} is slightly more complicated, so we'll split it into cases.
+The two possible cases for any natural number are either \inline{Z} or \inline{S n}, so:
+
+\begin{minted}{idris}
+zIsIdRight : (n : Nat) -> n = plus n 0
+zIsIdRight Z = ?nIsZero
+zIsIdRight (S n) = ?nIsSucc
+\end{minted}
+
+Notice in the first case we can use the definition of addition to simplify again, so we simply have \inline{zIsIdRight Z = Refl}.
+But what do we do in the other case?
+Here is our first recursive proof.
+
+We need a proof that the proposition is true for \inline{S n}.
+The only way we know to get a proof of this is from the \inline{zIsIdRight} function itself, so let's use that.
+But of course, that only gives us a proof that \inline{n = plus n 0}, while we need that \inline{S n = plus (S n) 0}.
+Luckily we know that \inline{a = b -> S a = S b}, and we know that \inline{plus (S n) 0 = S (plus n 0)} by the definition of addition.
+Combining these two via \inline{eqSucc}, we can prove this proposition in its entirety as follows:
+
+\begin{minted}{idris}
+zIsIdRight : (n : Nat) -> n = plus n 0
+zIsIdRight Z = Refl
+zIsIdRight (S n) = eqSucc n (plus n 0) (zIsIdRight n)
+\end{minted}
+
+This is a very common tactic for proving things, so it's good to get used to it now.
+
+Proving it twice was pretty annoying right?
+Especially because we know that addition commutes (i.e., $m + n = n + m$), so there's really no reason to.
+Let's prove that addition is commutative next, so we no longer have to do that.
 
 \subsection{Commutivity}
 Let's being by stating our proposition, that addition commutes, in Idris:
@@ -355,58 +469,22 @@ However, by our definition of addition, the left hand side really simplifies to 
 S k = S k + Z
 \end{minted}
 
-Let’s now write a new lemma, which will be a new function in Idris.
-This function has the type:
-
-\begin{minted}{idris}
-addZeroRHS : (k : Nat) -> k = plus k 0
-\end{minted}
-
-This says that, if I have a natural number $k$, then adding $0$ to it (on the right hand side), doesn’t change the value.
-How can we prove this?
-Once again, let’s split into cases.
-If \inline{k = 0}, this is trivially true by the definition of addition, so we can write:
-
-\begin{minted}{idris}
-addZeroRHS Z = Refl
-\end{minted}
-
-Otherwise, if \inline{k = S j} is the successor of another natural number, \inline{j}, (this is the only other possible case), then we can show this is true via induction (another one of the Peano axioms).
-So, if we can show that this proposition is true for \inline{j}, then we’re basically done.
-How can we do that?
-Well, we can just use the proposition again, but we apply \inline{j} to it, and we will eventually reach zero, a value for which we know the proposition is true (as we proved it earlier).
-Now we have a proof that \inline{j = plus j 0}, and that \inline{k = S j}.
-So now, we simply need to show that \inline{j = plus j 0 -> S j = S (plus j 0)}.
-
-This is trivially true by definition, as one of the Peano axioms says that $m=n$ if and only if $S(m)=S(n)$.
-In Idris, we express this via the function \inline{eqSucc}, which specifically says:
-
-\begin{minted}{idris}
-eqSucc : (left, right: Nat) -> left = right -> S left = S right
-\end{minted}
-
-That is, if two things are equal, then the successors of the two values is also equal.
-Therefore, we can finish our function \inline{addZeroRHS} with this:
-
-\begin{minted}{idris}
-addZeroRHS (S j) = eqSucc j (plus j 0) (addZeroRHS j)
-\end{minted}
+But wait!
+This is exactly what we'd get from using \inline{zIsIdRight : (n : Nat) -> n = plus n 0}, so let's just do that.
 
 So that takes care of the case of:
 
 \begin{minted}{idris}
-additionCommutes Z (S k) = addZeroRHS (S k)
+additionCommutes Z (S k) = zIsIdRight (S k)
 \end{minted}
 
 The next case, \inline{additionCommutes (S k) Z} is almost identical, except here we’re trying to show that \inline{S k + Z = Z + S k}.
 Here, the right hand side, rather than the left, immediately simplifies.
-So this is exactly the same as what we just proved, just flipped (i.e., it is \inline{S k + Z = S k}).
-Luckily for us, equality is symmetric, also by the Peano axioms, so we can simply apply this property, via a function called \inline{sym}.
-The type of it is \inline{sym : (left = right) -> right = left}.
+So this is exactly the same as what we just proved, just flipped (i.e., it is \inline{S k + Z = S k}), which means we need to use \inline{sym}.
 So we can complete the next case with:
 
 \begin{minted}{idris}
-additionCommutes (S k) Z = sym (addZeroRHS (S k))
+additionCommutes (S k) Z = sym (zIsIdRight (S k))
 \end{minted}
 
 Now there is only one case left, which is:
@@ -415,9 +493,9 @@ Now there is only one case left, which is:
 additionCommutes (S k) (S j) = ?something
 \end{minted}
 
-Once again, we will use the definition recursively, so that we will eventually reach one of the other cases that we have already proven the claim for.
-We want to incorporate a recursive call to our function, specifically, \inline{additionCommutes k j}, into our proof.
-So with that call, we have a proof of \inline{k + j = j + k}, but we want to prove \inline{S (k + S j) = S (j + S )}, which is unfortunately not just a simple application of \inline{eqSucc}.
+We will use the definition recursively, so that we will eventually reach one of the other cases that we have already proven the claim for.
+Specifically, we want to use \inline{additionCommutes k j} in our proof.
+So with that call, we have a proof of \inline{k + j = j + k}, but we want to prove \inline{S (k + S j) = S (j + S k)}, which is unfortunately not just a simple application of \inline{eqSucc}.
 So how can we do this?
 
 The first step is to realize that, if we know that \inline{k + S j = j + S k}, we can easily use \inline{eqSucc} to prove the final result.
@@ -481,11 +559,6 @@ Now, looking back at our original function, \inline{additionCommutes}, we can se
 Final code (the mutual block is required to have mutual recursion, i.e., \inline{lemma}, which calls \inline{additionCommutes}, and \inline{additionCommutes}, which calls \inline{lemma}):
 
 \begin{minted}{idris}
-addZeroRHS : (k : Nat) -> k = plus k 0
-addZeroRHS Z = Refl
-addZeroRHS (S j) = let recursive = addZeroRHS j in
-                             eqSucc j (plus j 0) recursive
-
 addSIsS: (a, b : Nat) -> a + S b = S (a + b)
 addSIsS Z b = Refl
 addSIsS (S k) b = eqSucc (k + S b) (S (k + b)) (addSIsS k b)
@@ -501,16 +574,63 @@ mutual
 
     additionCommutes : (a, b : Nat) -> a + b = b + a
     additionCommutes Z Z = Refl
-    additionCommutes Z (S k) = addZeroRHS (S k)
-    additionCommutes (S k) Z = sym \$ addZeroRHS (S k)
+    additionCommutes Z (S k) = zIsIdRight (S k)
+    additionCommutes (S k) Z = sym (zIsIdRight (S k))
     additionCommutes (S k) (S j) = additionCommutesLemma k j
 \end{minted}
 
 \subsection{Associativity}
+Proving \inline{addSIsS : (a, b : Nat) -> a + S b = S (a + b)} was pretty annoying, because it's another fact that we intuitively ``know''.
+So let's generalize it, then prove it, so we don't have to do with anything like it again.
+This is better known as the associative property, i.e., $a + (b + c) = (a + b) + c$.
+In Idris, we would write (hopefully you could guess at the definition):
+
+\begin{minted}{idris}
+additionAssociates : (a, b, c : Nat) -> a + (b + c) -> (a + b) + c
+additionAssociates Z b c = ?aIsZ
+additionAssociates (S a) b c = ?aIsS
+\end{minted}
+
+We could split this into 8 cases, but it turns out that's unnecessary and a \textbf{lot} more work.
+In the first case, we can use the definition of addition to simplify it immediately.
+Notice for the second case, we are looking to prove \inline{S a + (b + c) -> (S a + b) + c}.
+Applying the definition of addition one to the left hand side gives \inline{S (a + (b + c))} and twice to the right hand side give \inline{S ((a + b) + c)}.
+This is exactly a proof that addition associates, just for the predecessor of \inline{a}!
+This means it's a simple case of using \inline{eqSucc} and a recursive call.
+The final proof looks like this:
+
+\begin{minted}{idris}
+additionAssociates : (a, b, c : Nat) -> a + (b + c) -> (a + b) + c
+additionAssociates Z b c = Refl
+additionAssociates (S a) b c = let recursive = additionAssociates a b c in
+                                   eqSucc (a + (b + c)) ((a + b) + c) recursive
+\end{minted}
+
+We could re-express \inline{addSIsS} using \inline{additionAssociates}, but it's actually much longer and more confusing than our definition.
+
+\subsection{Canceling and Adding}
+In this section, we'll prove that, if $a + c = b + c$, then $a = b$, and if $c + a = c + b$, then $a = b$.
+
+\subsubsection{Addition Cancels Left}
+
+\subsubsection{Addition Cancels Right}
+
+\paragraph{Exercises}
+Try to prove the following theorems.
+The proofs will be similar to the proofs above, as they're essentially the same properties, but in reverse.
+Start by expressing them as a type in Idris, then enumerating the possible cases, using as few cases as possible (though it isn't a big deal if you have more than necessary).
+
+\begin{enumerate}
+    \item If $a + b = c$, then $b + a = c$.
+    \item If $a = b$, then $a + c = b + c$.
+    \item If $a = b$, then $c + a = c + b$.
+    \item Express \inline{addSIsS} using \inline{additionAssociates}.
+\end{enumerate}
+
+The answers can be found in the appendix.
 
 \section{Divides, GCD, LCM}
 \subsection{Divides}
-\subsubsection{In Idris}
 
 \subsection{GCD}
 \subsubsection{In Idris}
@@ -541,6 +661,38 @@ mutual
 \section{}
 
 \section{Appendix}
+
+\subsection{Answers}
+\subsubsection{Answers}
+
+\begin{enumerate}
+    \item If $a + b = c$, then $b + a = c$.
+
+\begin{minted}{idris}
+additionCommutesEq : (a, b, c : Nat) -> a + b = c -> b + a = c
+additionCommutesEq a b c prf = trans (additionCommutes b a) prf
+\end{minted}
+
+    \item If $a = b$, then $a + c = b + c$.
+
+\begin{minted}{idris}
+additionEqLeft : (a, b, c : Nat) -> a = b -> c + a = c + b
+additionEqLeft a b Z prf = prf
+additionEqLeft a b (S c) prf = eqSucc (c + a) (c + b) (additionEqLeft a b c prf)
+\end{minted}
+
+    \item If $a = b$, then $c + a = c + b$.
+
+\begin{minted}{idris}
+additionEqRight : (a, b, c : Nat) -> a = b -> a + c = b + c
+additionEqRight a b c prf =
+    let leftAdd = additionEqLeft a b c prf
+        flipCPlusA = additionCommutesEq c a (c + b) leftAdd in
+        sym (additionCommutesEq c b (a + c) (sym flipCPlusA))
+\end{minted}
+
+    \item Express \inline{addSIsS} using \inline{additionAssociates}.
+\end{enumerate}
 
 \subsection{Why is any of this valid?}
 
