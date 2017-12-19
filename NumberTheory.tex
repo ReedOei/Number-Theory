@@ -33,8 +33,7 @@ However, if I use the sine function, I get: $g(sin, \pi) = sin(\pi) = 0$.
 We will be using Idris to write proofs, and it will check our proofs for us, so we can be sure that we did it right.
 However, in addition to being able to check proofs, Idris is also a general purpose programming language, so you could reasonably program just about anything in it.
 
-\subsection{Basic Idris}
-\paragraph{Defining Functions}
+\subsection{Defining Functions}
 As Idris is a functional language, defining functions is the most important part of Idris.
 On a very basic level, you can think of functions in Idris as being just like mathematical functions: mappings from one set to another.
 
@@ -84,13 +83,72 @@ In math, we would write this as:
     p(x) = x + 2
 \]
 
-\subsection{Working with Lists}
+If we want multiple arguments to our functions (e.g., a function that calculates the distance to a point from the origin), then we would write:
+
+\begin{minted}{idris}
+distance : Double -> Double -> Double
+distance x y = sqrt (pow x 2 + pow y 2)
+\end{minted}
+
+This is the same as writing:
+
+\[
+    \mathrm{distance}(x, y) = \sqrt{x^2 + y^2}
+\]
+
+\paragraph{Exercises}
+
+\begin{enumerate}
+    \item Write a function in Idris that calculates $f(x) = x^2$
+    \item Write a function in Idris that calculates $f(x,y) = g(x) + g(y)$ where $g(x) = (x + 2)^2$
+\end{enumerate}
+
+\subsection{Types}
+Types are very important.
+They make writing, maintaining, and reading programs easier.
+This is a fairly straight forward and obvious idea: taking the length of a list makes sense, but what is the the length of an \inline{Integer}?
+Now, you could check for this at runtime like you would in Python, but, ultimately, that could lead to errors that are easily prevented before you even run the program.
+
+In Idris, we write the sentence ``\inline{x} is of type \inline{a}`` as \inline{x : a}.
+
+For example, we have:
+
+\begin{minted}{idris}
+1 : Integer
+1.0 : Double
+"Hello" : String
+\end{minted}
+
+However, in Idris, types are even more important than in many languages.
+Idris has \textit{dependent} types, which we'll talking about in depth later (and are what makes this entire book possible).
+
+\subsubsection{Built-in Types}
+Idris, like many programming languages has a number of built-in types, meaning that they come with Idris without having to write any code or install any other modules.
+The most important of these are:
+
+\begin{itemize}
+    \item[\inline{Nat}] Natural numbers, starting from 0 and going on forever.
+    \item[\inline{Integer}] The same as a normal integer in math.
+        Unlike many languages, \inline{Integer} in Idris is arbitrary precision, meaning that there is no limit to its size.
+    \item[\inline{Double}] Used to hold non-integer numbers like 1.5 or 0.31.
+    \item[\inline{Char}] A single character, like 'a' or '.'.
+    \item[\inline{String}] A string of characters, like "hello" or "Idris".
+\end{itemize}
+
+\subsubsection{Tuples}
+
+\subsubsection{Lists}
+
+\subsubsection{Function Types}
+\paragraph{Currying}
 
 \subsection{Recursion}
 
 \subsection{Pattern Matching}
 
 \subsection{Defining Custom Types}
+
+\subsection{Dependent Types}
 
 \subsection{Proving Things in a Programming Language?}
 \subsubsection{Basic Propositions}
@@ -148,7 +206,7 @@ So if we can create a value of the type \inline{Either a b} with just an \inline
 
 \paragraph{Exercises}
 
-\subsubsection{Predicates with Numbers}
+\subsubsection{Predicates}
 Now, we’ll extend this idea past just simple boolean propositions, and include numbers and more complicated predicates.
 Basically, now we will take things like numbers, rather than just values of any type, and show that certain conditions are true.
 
@@ -186,7 +244,7 @@ g (x :: xs) = x
 
 If you want to read more about this sort of thing, see the Curry--Howard correspondence (and related topics).
 
-\section{Definition of Natural Numbers}
+\section{Natural Numbers ($\mathbb{N}$)}
 \subsection{Definition}
 Now, starting on the actual proof.
 So, first, let's state the axioms we'll be using, which are just the basic Peano axioms, first using ``normal'' math, then in Idris.
@@ -209,6 +267,8 @@ data Nat : Type where
 \end{minted}
 
 This is the same thing, saying that a value of the type \inline{Nat} is either \inline{Z} (i.e. 0) or \inline{S n} where \inline{n} is another natural number.
+
+\subsection{Peano Axioms}
 
 So, now we need to say what it means for two natural numbers to be equal.
 We're going to go with the most basic definition of equality, and just say that two values are equal if they're the same.

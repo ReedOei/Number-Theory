@@ -2,6 +2,9 @@ module NumberTheory
 
 import Data.So
 
+distance : Double -> Double -> Double
+distance x y = sqrt (pow x 2 + pow y 2)
+
 data BothNotZero : Nat -> Nat -> Type where
   Zerophobia : BothNotZero (S n) (S m)
 
