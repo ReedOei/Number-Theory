@@ -194,19 +194,31 @@ divides a (S b) =
                                                            -- Link everything together, using the definition of mult to prove
                                                            -- a + n * a = S n * a
                                                            -- Then we get b = S n * a, Q.E.D.
-                                                           Yes (DoesDivide a (S b) (S n) (trans (trans (trans bId aCommute) sNWorks) Refl))
+                                                           Yes (DoesDivide a (S b) (S n) (trans (trans bId aCommute) sNWorks))
                          -- a does not divides (b - a), so a cannot divide b
-                         No prf => No (\(DoesDivide _ _ (S n) false) =>
-                                  let test = minusEqRight (S b) (a + n*a) a false prfLTE (lteAddRight a {m=n*a})
-                                      test2 = additionCommutes a (n*a)
-                                      test25 = trans false test2
-                                      test3 = sym (addMinusCancel (n*a) a (partLessThanSum (n*a) a))
-                                      test6 = minusEqRight (a + n*a) (n*a + a) a test2 (partLessThanSumRight (n*a) a) (partLessThanSum (n*a) a)
-                                      test7 = trans (trans test test6) test3
-                                      test4 = DoesDivide a (S b - a) n test7 in
-                                      prf test4)
+                         No prf => No (\lamp =>
+                                  case lamp of
+                                       -- b = a * k; k = S n
+                                       -- k cannot be 0, because that implies that S b is 0, but obviously it's can't be.
+                                       DoesDivide _ _ Z false => void (SIsNotZ false)
+
+                                       -- The goal here is to prove that, if S b = (S n) * a, then S b - a = n*a
+                                       -- We know this is false, (because we checked above), so this leads to a contradiction.
+                                       (DoesDivide _ _ (S n) false) =>
+                                              -- S b - a = a + n*a - a
+                                          let sbEqualsNAInit = minusEqRight (S b) (a + n*a) a false prfLTE (partLessThanSumRight (n*a) a)
+                                              -- a + n*a - a = n*a + a - a
+                                              commuteAdd = minusEqRight (a + n*a) (n*a + a) a (additionCommutes a (n*a)) (partLessThanSumRight (n*a) a) (partLessThanSum (n*a) a)
+                                              -- n*a + a - a = n*a
+                                              nTimesA = sym (addMinusCancel (n*a) a (partLessThanSum (n*a) a))
+                                              -- Combining the equalities above gives us: S b - a = n*a, as we wanted.
+                                              sbEqualsNAProof = trans (trans sbEqualsNAInit commuteAdd) nTimesA
+                                              aDividesSBMinusA = DoesDivide a (S b - a) n sbEqualsNAProof in
+                                              prf aDividesSBMinusA)
       No prfGT  => No (\lamp =>
                   case lamp of
+                       -- b = a * k; k = S n
+                       -- k cannot be 0, because that implies that S b is 0, but obviously it's can't be.
                        DoesDivide _ _ Z false => void (SIsNotZ false)
                        (DoesDivide _ _ (S n) false) =>
                             -- For any a, we have a <= a + n*a
