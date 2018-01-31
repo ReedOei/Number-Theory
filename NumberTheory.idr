@@ -205,13 +205,31 @@ distribute (S k) b c = let -- k*(b+c) = k*b+k*c
 
 multCommutes : (a, b : Nat) -> a * b = b * a
 multCommutes Z b = zMultIsZRight b
-multCommutes (S k) b = let recursive = multCommutes k b in
-                           ?multCommutes_rhs_3
+multCommutes (S k) b = let -- k*b = b*k
+                           recursive = multCommutes k b
+                           -- b*(1 + k) = b*1 + b*k
+                           step1 = distribute b 1 k
+                           -- b*1 + b*k = b + b*k
+                           step2 = additionEqRight (b * 1) b (b*k) (sym (multOneIsIdRight b))
+                           -- b + b*k = b + k*b
+                           step3 = sym (additionEqLeft (k*b) (b*k) b recursive) in
+                           sym (trans (trans step1 step2) step3)
 
 multAssociates : (a, b, c : Nat) -> a * (b * c) = (a * b) * c
 multAssociates Z b c = Refl
-multAssociates (S k) b c = let test = multAssociates k b c in
-                               ?multAssociates_rhs_2
+multAssociates (S k) b c = let -- k*(b*c) = (k*b)*c
+                               recursive = multAssociates k b c
+                               -- k*(b*c) = c*(k*b)
+                               step1_1 = trans recursive (multCommutes (k*b) c)
+                               -- b*c + k*(b*c) = b*c + c*(k*b)
+                               step1 = additionEqLeft (k*(b*c)) (c*(k*b)) (b*c) step1_1
+                               -- b*c + c*(k*b) = c*b + c*(k*b)
+                               step2 = additionEqRight (b*c) (c*b) (c*(k*b)) (multCommutes b c)
+                               -- c*b + c*(k*b) = c*(b+k*b)
+                               step3 = sym (distribute c b (k*b))
+                               -- c*(b+b*k) = (b+b*k)*c
+                               step4 = multCommutes c (b+k*b) in
+                               trans step1 (trans step2 (trans step3 step4))
 
 dividesRefl : Divides a a
 dividesRefl = DoesDivide a a 1 (multOneIsIdLeft a)
