@@ -8,8 +8,12 @@ data BothNotZero : Nat -> Nat -> Type where
 data Divides : Nat -> Nat -> Type where
   DoesDivide : (a, b, n : Nat) -> (b = n*a) -> Divides a b
 
-data QuotRem : Nat -> Nat -> Type where
-  IsQuotRem : (a, b, q, r : Nat) -> Not (b = Z) -> a = b * q + r -> LTE r (S b) -> QuotRem a b
+data Mod : Nat -> Nat -> Nat -> Type where
+  Congruent : (a, b, n : Nat) -> Divides n (minus b a) -> Mod a b n
+
+data GCD : Nat -> Nat -> Nat -> Type where
+  GCDAZero : (b : Nat) -> GCD Z b b
+  GCDEq : (a, b, x, y, n : Nat) -> Divides n a -> Divides n b -> a*x + b*y = n -> GCD a b n
 
 zIsIdLeft : (n : Nat) -> n = plus 0 n
 zIsIdLeft n = sym Refl
@@ -127,14 +131,6 @@ minusEqRight a b (S c) prf prfLTE1 prfLTE2 =
       trans aPredIsBPred (sym (minusSuccIsPred b c))
 
 total
-testAA : (a, b, c : Nat) -> LTE (S (b + c)) a -> LTE (b + S c) a -> a - S (b + c) = a - (b + S c)
-testAA a b c prf1 prf2 = minusEqLeft (S (b + c)) (b + S c) a (sym (addSIsS b c)) prf1 prf2
-
-total
-testAB : (a, b : Nat) -> LTE b a -> a - b = S a - S b
-testAB a b prf = Refl
-
-total
 partLessThanSum : (a, b : Nat) -> LTE b (a + b)
 partLessThanSum _ Z = LTEZero
 partLessThanSum Z (S b) = lteRefl
@@ -178,6 +174,57 @@ checkLTE (S a) (S b) =
        Yes prfLTE => Yes (LTESucc prfLTE)
        No prfGT   => No (\prf => prfGT (lteSuccInjective a b prf))
 
+multOneIsIdLeft : (a : Nat) -> a = 1 * a
+multOneIsIdLeft Z = Refl
+multOneIsIdLeft (S a) = eqSucc a (1 * a) (multOneIsIdLeft a)
+
+multOneIsIdRight : (a : Nat) -> a = a * 1
+multOneIsIdRight Z = Refl
+multOneIsIdRight (S a) = eqSucc a (a * 1) (multOneIsIdRight a)
+
+distribute : (a, b, c : Nat) -> a * (b + c) = a * b + a * c
+distribute Z b c = Refl
+distribute (S k) b c = let -- k*(b+c) = k*b+k*c
+                           recursive = distribute k b c
+                           -- (b+c) + (k*(b+c)) = (b+c) + (k*b+k*c)
+                           step1 = additionEqLeft (k*(b+c)) (k*b+k*c) (b+c) recursive
+                           -- (b+c) + (k*b+k*c) = b + (c + (k*b+k*c))
+                           step2 = sym (additionAssociates b c (k*b+k*c))
+                           -- b + (c + (k*b+k*c)) = b + ((k*b+k*c)+c)
+                           step3 = additionEqLeft (c+(k*b+k*c)) ((k*b+k*c)+c) b (additionCommutes c (k*b+k*c))
+                           -- b + ((k*b+k*c)+c) = b + (k*b+(k*c+c))
+                           step4 = sym (additionEqLeft (k*b+(k*c+c)) ((k*b+k*c)+c) b (additionAssociates (k*b) (k*c) c))
+                           -- k*b + (c+k*c) = k*b + (k*c+c)
+                           step5_1 = additionEqLeft (c+k*c) (k*c+c) (k*b) (additionCommutes c (k*c))
+                           -- b + (k*b+(k*c+c)) = b + (k*b+(c+k*c))
+                           step5 = sym (additionEqLeft (k*b+(c+k*c)) (k*b+(k*c+c)) b step5_1)
+                           -- b + (k*b+(c+k*c)) = (b+k*b)+(c+k*c)
+                           step6 = additionAssociates b (k*b) (c + k*c) in
+                           -- Connect everything
+                           trans (trans (trans (trans (trans step1 step2) step3) step4) step5) step6
+
+multCommutes : (a, b : Nat) -> a * b = b * a
+multCommutes Z b = zMultIsZRight b
+multCommutes (S k) b = let recursive = multCommutes k b in
+                           ?multCommutes_rhs_3
+
+multAssociates : (a, b, c : Nat) -> a * (b * c) = (a * b) * c
+multAssociates Z b c = Refl
+multAssociates (S k) b c = let test = multAssociates k b c in
+                               ?multAssociates_rhs_2
+
+dividesRefl : Divides a a
+dividesRefl = DoesDivide a a 1 (multOneIsIdLeft a)
+
+anyDividesZ : Divides a 0
+anyDividesZ = DoesDivide a Z Z Refl
+
+dividesTrans : (a, b, c : Nat) -> Divides a b -> Divides b c -> Divides a c
+dividesTrans a b c (DoesDivide _ _ n prf) (DoesDivide _ _ m prf2) = DoesDivide a c (m*n) ?hole
+
+dividesABC : (a, b, c : Nat) -> Divides a (b*c) -> Either (Divides a b) (Divides a c)
+
+
 divides : (a, b : Nat) -> Dec (Divides a b)
 divides a Z = Yes (DoesDivide a Z Z Refl)
 divides a (S b) =
@@ -196,8 +243,8 @@ divides a (S b) =
                                                            -- Then we get b = S n * a, Q.E.D.
                                                            Yes (DoesDivide a (S b) (S n) (trans (trans bId aCommute) sNWorks))
                          -- a does not divides (b - a), so a cannot divide b
-                         No prf => No (\lamp =>
-                                  case lamp of
+                         No prf => No (\contra =>
+                                  case contra of
                                        -- b = a * k; k = S n
                                        -- k cannot be 0, because that implies that S b is 0, but obviously it's can't be.
                                        DoesDivide _ _ Z false => void (SIsNotZ false)
@@ -215,10 +262,10 @@ divides a (S b) =
                                               sbEqualsNAProof = trans (trans sbEqualsNAInit commuteAdd) nTimesA
                                               aDividesSBMinusA = DoesDivide a (S b - a) n sbEqualsNAProof in
                                               prf aDividesSBMinusA)
-      No prfGT  => No (\lamp =>
-                  case lamp of
+      No prfGT  => No (\contra =>
+                  case contra of
                        -- b = a * k; k = S n
-                       -- k cannot be 0, because that implies that S b is 0, but obviously it's can't be.
+                       -- k cannot be 0, because that implies that S b is 0, but obviously it can't be
                        DoesDivide _ _ Z false => void (SIsNotZ false)
                        (DoesDivide _ _ (S n) false) =>
                             -- For any a, we have a <= a + n*a
@@ -227,4 +274,10 @@ divides a (S b) =
                             -- As S b = a + n*a, we must have a <= a + n*a <= S b
                             -- But we know that a > S b, so we have a contradiction.
                             prfGT (replace (sym false) aLTAPlusAN))
+
+-- euclideanAlg : (a, b : Nat) -> NotBothZero a b -> GCD a b n
+-- euclideanAlg {n} Z b _ =
+--   case decEq b n of
+--        Yes prf => replace prf (GCDEq Z b Z 1 b anyDividesZ dividesRefl (sym (multOneIsIdRight b)))
+--        No prf  => void ?hole
 
