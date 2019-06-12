@@ -5,6 +5,10 @@ import Data.So
 %default total
 %access public export
 
+addNotZIsNotZ : (a, b : Nat) -> Either (Not (a = 0)) (Not (b = 0)) -> Not (a + b = 0)
+addNotZIsNotZ a b (Left aNotZ) = ?addNotZIsNotZ_rhs_1
+addNotZIsNotZ a b (Right bNotZ) = ?addNotZIsNotZ_rhs_2
+
 zIsIdLeft : (n : Nat) -> n = plus 0 n
 zIsIdLeft n = sym Refl
 
